@@ -7,8 +7,10 @@ included cluster data. The targeted artifact badge is **Artifact Available**.
 
 The package includes implementations or runner wrappers for eight algorithms:
 `kratos`, `perseus`, `csr`, `lstm`, `multi_pred`, `iaso`, `patchTST`, and
-`sliding_window` (also selectable as `threshold`). The input data comes from
-the Perseus FAST '23 paper:
+`sliding_window` (also selectable as `threshold`). This repository includes a
+subset of the Perseus FAST '23 data for artifact inspection and smoke testing.
+The remaining data can be downloaded from the link provided by the Perseus
+paper:
 https://www.usenix.org/conference/fast23/presentation/lu
 
 To check basic functionality within a short review window, run a small subset
@@ -37,7 +39,7 @@ prefix,day,algorithm,rg_id,serialno,status
 cluster_A_host_1,last_15_days,threshold,cluster_A/host_1,disk1,T
 ```
 
-The exact number of positive rows can vary if dependencies or algorithm
+The exact number of positive rows can vary if dependencies, configurations, or algorithm
 libraries change, but the command should finish without runner errors and
 produce the requested CSV files.
 
@@ -54,6 +56,8 @@ claims:
 - For algorithms that produce daily scores or predictions, the runner also
   writes score files that expose the intermediate values used for final
   aggregate decisions.
+- The repository includes only part of the full dataset. The rest can be
+  downloaded from the Perseus paper's data link.
 - The artifact is packaged for availability and inspection. It is not claimed
   to be a turnkey reproduction of every experiment, figure, or environment from
   the associated paper.
@@ -63,10 +67,16 @@ cluster, host, and day:
 
 ```text
 data/
+  slow_drive_info.csv
   cluster_A/
     host_1/
       2022-07-18.csv
 ```
+
+`data/slow_drive_info.csv` contains the included slow-drive labels. The
+cluster/host/day CSV files included in this repository are a subset of the full
+Perseus dataset; download the full data from the Perseus paper link above if
+reviewing beyond the packaged subset.
 
 Each CSV must contain:
 
