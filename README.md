@@ -1,4 +1,4 @@
-# All Algorithms Runner
+# Kratos Fail-Slow Algorithms Runner
 
 ## Getting Started Instructions
 
