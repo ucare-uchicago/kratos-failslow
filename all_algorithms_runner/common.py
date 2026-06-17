@@ -20,18 +20,6 @@ class Result:
     serialno: str
     status: str = "T"
 
-    def to_csv_row(self) -> str:
-        return ",".join(
-            [
-                self.prefix,
-                self.day,
-                self.algorithm,
-                self.rg_id,
-                self.serialno,
-                self.status,
-            ]
-        )
-
 
 def normalize_cluster_csv(csv_path: Path, cluster: str, host: str) -> pd.DataFrame:
     df = pd.read_csv(csv_path)
@@ -79,8 +67,3 @@ def robust_threshold(values: Iterable[float], sigma: float = 2.0) -> float:
     if not np.isfinite(std) or std == 0:
         return float("inf")
     return float(arr.mean() + sigma * std)
-
-
-def day_from_index(df: pd.DataFrame) -> str:
-    days = df.index.get_level_values("time").strftime("%Y-%m-%d").unique()
-    return str(days[0]) if len(days) else ""

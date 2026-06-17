@@ -244,25 +244,19 @@ def run(args: argparse.Namespace) -> list[Result]:
             except Exception as exc:
                 print(f"{name} failed for {csv_path}: {exc}", file=sys.stderr)
     if "kratos" in selected and "kratos" in modules and kratos_scores:
-        import pandas as pd
-
         kratos_score_df = pd.concat(kratos_scores, ignore_index=True)
         results.extend(modules["kratos"].flag_scores(kratos_score_df, prefix_by_group=kratos_prefixes))
-        write_kratos_scores(
+        write_scores(
             modules["kratos"].decision_scores(kratos_score_df),
             args.kratos_scores_output,
         )
     if "perseus" in selected and "perseus" in modules and perseus_scores:
-        import pandas as pd
-
         perseus_score_df = pd.concat(perseus_scores, ignore_index=True)
         results.extend(modules["perseus"].flag_scores(perseus_score_df, prefix_by_group=perseus_prefixes))
         write_scores(
             modules["perseus"].decision_scores(perseus_score_df),
             args.perseus_scores_output,
         )
-    import pandas as pd
-
     aggregate_debug = []
     for name, rows in aggregate_scores.items():
         if name not in selected or not rows:
@@ -297,10 +291,6 @@ def write_results(results: list[Result], output_path: Path) -> None:
 def write_scores(scores, output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     scores.to_csv(output_path, index=False)
-
-
-def write_kratos_scores(scores, output_path: Path) -> None:
-    write_scores(scores, output_path)
 
 
 def main() -> None:

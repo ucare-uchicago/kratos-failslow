@@ -1,7 +1,7 @@
 # All Algorithms Runner
 
-This directory contains one runner package for all eight algorithms in this
-repository:
+This repository runs eight disk slow-failure detection algorithms against the
+included cluster data:
 
 - `kratos`
 - `perseus`
@@ -10,45 +10,25 @@ repository:
 - `multi_pred`
 - `iaso`
 - `patchTST`
-- `sliding_window` (`threshold`)
+- `sliding_window` (also selectable as `threshold`)
 
+The input data comes from the Perseus FAST '23 paper:
+https://www.usenix.org/conference/fast23/presentation/lu
 
-## Data Format
+## Quick Start
 
-The default input root is the repository's `data/` directory:
-
-```text
-data/
-  cluster_A/
-    host_1/
-      2022-07-18.csv
-```
-
-Each CSV must contain:
-
-```csv
-ts,disk_id,throughput,latency
-```
-The data is retrieved from the Perseus paper published at FAST'23
-(https://www.usenix.org/conference/fast23/presentation/lu)
-
-The runner normalizes those columns to the benchmark schema used by all local
-algorithm modules:
-
-- `ts` -> `time`
-- `disk_id` -> `serialno`
-- `throughput` -> `read_blocks_delta`
-- `latency` -> `read_total_latency` and `read_blk_latency`
-- `cluster_X/host_N` -> `rg_id`
-
-## Run
-
-From the repository root, run every available algorithm on all CSV files under
-`data/`:
+Run every available algorithm against all CSV files under `data/`:
 
 ```bash
-python3 all_algorithms_runner/run.py --output all_algorithms_runner/results.csv
+python3 all_algorithms_runner/run.py
 ```
+
+The default outputs are:
+
+- `all_algorithms_runner/results.csv` for final positive detections
+- `all_algorithms_runner/kratos_scores.csv` for Kratos daily and decision scores
+- `all_algorithms_runner/perseus_scores.csv` for Perseus daily and decision scores
+- `all_algorithms_runner/aggregate_scores.csv` for the other aggregated algorithms
 
 Run a smaller subset while developing:
 
@@ -67,33 +47,47 @@ Run a single algorithm:
 python3 all_algorithms_runner/run.py --algorithms kratos
 ```
 
-`sliding_window` can also be selected with the `threshold` alias. Its output
-algorithm column is `threshold`.
+## Data
 
-`kratos` first computes the daily KL rows, then
-applies the score and last-15-day aggregation. Its output day column is
-`last_15_days` because those detections are aggregate disk results rather than
-single-day rows. The current default aggregate score threshold is `1000`.
+The runner reads this directory layout by default:
 
-When `kratos` runs, the runner also writes the score inputs used for the status
-decision to `all_algorithms_runner/kratos_scores.csv` by default. Override that
-path with:
-
-```bash
-python3 all_algorithms_runner/run.py \
-  --algorithms kratos \
-  --kratos-scores-output /tmp/kratos_scores.csv
+```text
+data/
+  cluster_A/
+    host_1/
+      2022-07-18.csv
 ```
 
-`perseus` performs the daily score generation first, then
-aggregates non-null disk scores over the last 15 days. Its output day column is also
-`last_15_days`. The default aggregate score threshold is `50`. The runner writes
-the daily and aggregate Perseus decision fields to
-`all_algorithms_runner/perseus_scores.csv`; override it with
-`--perseus-scores-output`.
+Each CSV must contain these columns:
 
-The remaining benchmark algorithms are also aggregated before being written to
-the final result CSV, using the lookback and threshold settings in
+```csv
+ts,disk_id,throughput,latency
+```
+
+At load time, the runner normalizes those columns to the schema expected by the
+algorithm modules:
+
+- `ts` becomes `time`
+- `disk_id` becomes `serialno`
+- `throughput` becomes `read_blocks_delta`
+- `latency` becomes `read_total_latency` and `read_blk_latency`
+- `cluster_X/host_N` becomes `rg_id`
+
+Use `--data-root PATH` to run against another data directory.
+
+## Algorithm Aggregation
+
+Most algorithms produce daily disk scores or predictions that are aggregated
+before final results are written. `sliding_window` can be selected with the
+`threshold` alias, and its final output algorithm name is `threshold`.
+
+`kratos` computes daily KL rows, applies its score rules, and then aggregates
+over the last 15 days. Its default aggregate score threshold is `1000`.
+
+`perseus` computes daily scores and aggregates non-null disk scores over the
+last 15 days. Its default aggregate score threshold is `50`.
+
+The other aggregated algorithms use these settings from
 `all_algorithms_runner/run.py`:
 
 | Algorithm | Lookback | Threshold | Value |
@@ -107,12 +101,7 @@ the final result CSV, using the lookback and threshold settings in
 
 The thresholds and lookback window are selected based on their best MCC.
 
-Their daily score rows and aggregate decision fields are written to
-`all_algorithms_runner/aggregate_scores.csv` by default. Override that with
-`--aggregate-scores-output`.
-
-
-## Model-Based Algorithms
+## Model Files
 
 `lstm` and `patchTST` need pretrained model files. By default the runner uses
 `all_algorithms_runner/model/` when that directory exists; otherwise it falls
@@ -131,7 +120,7 @@ prints a setup message. Use `--model-dir PATH` to point at the artifacts, or
 
 ## Output
 
-The output CSV contains one row per positive detection:
+The final result CSV contains one row per positive detection:
 
 ```csv
 prefix,day,algorithm,rg_id,serialno,status
@@ -141,7 +130,17 @@ cluster_A_host_1,last_15_days,threshold,cluster_A/host_1,disk1,T
 `status` is only written for positive detections, matching the existing runner
 behavior.
 
-For the registered algorithms, final result rows are aggregate decisions, so
+Final result rows are aggregate decisions for the registered algorithms, so
 `day` is an aggregate label such as `last_15_days`, `last_7_days`,
 `last_5_days`, or `last_1_days`. The daily rows used to make those decisions
 are written to the score CSVs described above.
+
+You can override output paths with:
+
+```bash
+python3 all_algorithms_runner/run.py \
+  --output /tmp/results.csv \
+  --kratos-scores-output /tmp/kratos_scores.csv \
+  --perseus-scores-output /tmp/perseus_scores.csv \
+  --aggregate-scores-output /tmp/aggregate_scores.csv
+```
